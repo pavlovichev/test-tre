@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RX-RY · ДНК-ЧАСТИЦЫ · ВИДЕО ЛЮБОЙ ДЛИНЫ</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0a1a 0%, #0f0f1f 100%);
+            font-family: monospace;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; font-size: 1.4rem; margin-bottom: 20px; color: #a855f7; }
+        .main-panel { display: flex; gap: 20px; flex-wrap: wrap; }
+        .card {
+            flex: 1;
+            background: rgba(10, 15, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 20px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            min-width: 300px;
+        }
+        .canvas-container {
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            border: 2px solid rgba(192, 132, 252, 0.6);
+            margin-bottom: 15px;
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+        button {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid #3b82f6;
+            color: #94a3b8;
+            padding: 10px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 4px;
+        }
+        button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #3b82f6, #a855f7);
+            color: white;
+        }
+        .file-label {
+            background: linear-gradient(135deg, #3b82f6, #a855f7);
+            padding: 10px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            display: inline-block;
+            font-weight: bold;
+            color: white;
+        }
+        input[type="file"] { display: none; }
+        .status {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 12px;
+            border-left: 3px solid #f97316;
+            margin-top: 12px;
+            text-align: center;
+        }
+        .stats { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+        .stat { background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px; font-size: 11px; }
+        .controls { display: flex; gap: 8px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+        .mode-group { display: flex; gap: 4px; background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 40px; }
+        .mode-btn {
+            background: transparent;
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+            padding: 5px 12px;
+            font-size: 11px;
+            margin: 0;
+        }
+        .mode-btn.active { background: #3b82f6; color: white; }
+        .slider-group { background: rgba(0,0,0,0.4); padding: 5px 12px; border-radius: 30px; font-size: 11px; display: flex; align-items: center; gap: 8px; }
+        input[type="range"] { width: 100px; }
+        .action-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .badge { background: rgba(59,130,246,0.2); border-radius: 20px; padding: 5px 12px; font-size: 11px; text-align: center; }
+        footer { text-align: center; font-size: 10px; color: #5f6a8a; margin-top: 20px; }
+        .dna-visual { display: flex; gap: 2px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+        .dna-dot { width: 4px; height: 4px; border-radius: 50%; background: #3b82f6; }
+        .video-metrics { font-size: 11px; text-align: center; margin-top: 8px; color: #60a5fa; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧬 RX-RY · ДНК-ЧАСТИЦЫ · ВИДЕО ЛЮБОЙ ДЛИНЫ</h1>
+    
+    <div class="main-panel">
+        <div class="card">
+            <div style="text-align: center;">
+                <label class="file-label" for="photoInput">📸 ЗАГРУЗИТЬ ФОТО</label>
+                <input type="file" id="photoInput" accept="image/jpeg,image/png,image/jpg">
+                <label class="file-label" for="videoInput">🎬 ЗАГРУЗИТЬ ВИДЕО (ЛЮБОЙ ДЛИНЫ)</label>
+                <input type="file" id="videoInput" accept="video/mp4,video/webm,video/quicktime">
+            </div>
+            <div class="canvas-container">
+                <canvas id="sourceCanvas" width="800" height="600"></canvas>
+            </div>
+            <div class="stats">
+                <div class="stat">📊 ЧАСТИЦ: <span id="particleCount">0</span></div>
+                <div class="stat">🔘 КОНТУРОВ: <span id="edgeCount">0</span></div>
+                <div class="stat">🎬 ДВИЖЕНИЕ: <span id="motionPercent">0</span>%</div>
+            </div>
+            <div class="badge" id="sourceInfo">Источник не выбран</div>
+            <div class="video-metrics" id="videoMetrics">🎬 Анализ видео: движение 0% · яркость 0%</div>
+            <div class="dna-visual" id="dnaVisual"></div>
+        </div>
+        
+        <div class="card">
+            <div class="canvas-container">
+                <canvas id="videoCanvas" width="800" height="600"></canvas>
+            </div>
+            
+            <div class="controls">
+                <div class="mode-group">
+                    <button class="mode-btn" data-camera="smart">🎥 SMART</button>
+                    <button class="mode-btn active" data-camera="fixed">🎥 FIXED</button>
+                    <button class="mode-btn" data-camera="sync">🎥 SYNC</button>
+                </div>
+                <div class="mode-group">
+                    <button class="mode-btn" data-gen="dna">🧬 DNA</button>
+                    <button class="mode-btn active" data-gen="hybrid">🔀 HYBRID</button>
+                    <button class="mode-btn" data-gen="mirror">🪞 MIRROR</button>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="slider-group"><span>🌀 ПУЛЬС</span><input type="range" id="pulseSlider" min="0" max="1.2" step="0.05" value="0.7"></div>
+                <div class="slider-group"><span>⚡ СКОРОСТЬ</span><input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.0"></div>
+                <div class="slider-group"><span>💃 ДВИЖЕНИЕ</span><input type="range" id="moveSlider" min="0" max="1.5" step="0.05" value="0.8"></div>
+                <div class="slider-group"><span>🎬 РЕАКЦИЯ</span><input type="range" id="reactionSlider" min="0" max="1.5" step="0.05" value="1.0"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="takePhotoBtn" class="success" disabled>📸 СДЕЛАТЬ ФОТО</button>
+                <button id="generateVideoBtn" class="primary" disabled>🎬 СОЗДАТЬ ВИДЕО (5 СЕК)</button>
+            </div>
+            
+            <div id="statusMsg" class="status">⚡ Загрузите любое видео — будет играть полностью, частицы реагируют</div>
+        </div>
+    </div>
+    
+    <footer>🔬 Видео любой длины загружается и играет полностью. Частицы реагируют на движение всё время.</footer>
+</div>
+
+<script>
+    (function() {
+        const WIDTH = 800;
+        const HEIGHT = 600;
+        const FPS = 30;
+        const DNA_ATOMS = 150;
+        const NOZZLES_COUNT = 32;
+        const NOZZLE_GROUPS = 4;
+        const MIRROR_BUFFER_SIZE = 800;
+        
+        const sourceCanvas = document.getElementById('sourceCanvas');
+        const videoCanvas = document.getElementById('videoCanvas');
+        const ctxSource = sourceCanvas.getContext('2d');
+        const ctxVideo = videoCanvas.getContext('2d');
+        const photoInput = document.getElementById('photoInput');
+        const videoInput = document.getElementById('videoInput');
+        const generateBtn = document.getElementById('generateVideoBtn');
+        const takePhotoBtn = document.getElementById('takePhotoBtn');
+        const statusDiv = document.getElementById('statusMsg');
+        const particleCountSpan = document.getElementById('particleCount');
+        const edgeCountSpan = document.getElementById('edgeCount');
+        const motionPercentSpan = document.getElementById('motionPercent');
+        const videoMetricsSpan = document.getElementById('videoMetrics');
+        const dnaVisual = document.getElementById('dnaVisual');
+        
+        const pulseSlider = document.getElementById('pulseSlider');
+        const speedSlider = document.getElementById('speedSlider');
+        const moveSlider = document.getElementById('moveSlider');
+        const reactionSlider = document.getElementById('reactionSlider');
+        
+        let currentSourceType = null;
+        let sourceVideoElement = null;
+        let currentParticles = [];
+        let currentPulse = 0.7, currentSpeed = 1.0, currentMove = 0.8, currentReaction = 1.0;
+        let cameraMode = 'fixed';
+        let genMode = 'hybrid';
+        
+        let dnaAtoms = [];
+        let nozzles = [];
+        let mirrorBuffer = [];
+        let mirrorIndex = 0;
+        let mirrorSync = 0.5;
+        
+        let currentCamera = { x: 0, y: 0, scale: 1 };
+        let cameraTarget = { x: 0, y: 0, scale: 1 };
+        let centerX = 0, centerY = 0;
+        let baseScale = 1;
+        
+        let videoAnimationId = null;
+        let currentFrameIndex = 0;
+        
+        let videoAnalysis = {
+            brightness: 0.5, motion: 0.3, colorR: 0.5, colorG: 0.5, colorB: 0.5, lastFrameData: null
+        };
+        
+        function analyzeVideoFrame(imageData, width, height) {
+            const data = imageData.data;
+            let totalBrightness = 0, rSum = 0, gSum = 0, bSum = 0, motionScore = 0, sampleCount = 0;
+            const step = 6;
+            for (let y = 0; y < height; y += step) {
+                for (let x = 0; x < width; x += step) {
+                    const idx = (y * width + x) * 4;
+                    if (idx + 2 >= data.length) continue;
+                    const r = data[idx], g = data[idx+1], b = data[idx+2];
+                    const brightness = (r + g + b) / (3 * 255);
+                    totalBrightness += brightness;
+                    rSum += r/255; gSum += g/255; bSum += b/255;
+                    sampleCount++;
+                    if (videoAnalysis.lastFrameData) {
+                        const lastIdx = (y * width + x) * 4;
+                        if (lastIdx + 2 < videoAnalysis.lastFrameData.length) {
+                            const diff = Math.abs(r - videoAnalysis.lastFrameData[lastIdx]) +
+                                        Math.abs(g - videoAnalysis.lastFrameData[lastIdx+1]) +
+                                        Math.abs(b - videoAnalysis.lastFrameData[lastIdx+2]);
+                            motionScore += diff / (3 * 255);
+                        }
+                    }
+                }
+            }
+            if (sampleCount > 0) {
+                videoAnalysis.brightness = videoAnalysis.brightness * 0.85 + (totalBrightness/sampleCount) * 0.15;
+                videoAnalysis.motion = videoAnalysis.motion * 0.8 + Math.min(1, (motionScore/sampleCount) * 1.5) * 0.2;
+                videoAnalysis.colorR = videoAnalysis.colorR * 0.9 + (rSum/sampleCount) * 0.1;
+                videoAnalysis.colorG = videoAnalysis.colorG * 0.9 + (gSum/sampleCount) * 0.1;
+                videoAnalysis.colorB = videoAnalysis.colorB * 0.9 + (bSum/sampleCount) * 0.1;
+            }
+            videoAnalysis.lastFrameData = new Uint8ClampedArray(data);
+            return videoAnalysis;
+        }
+        
+        function initDNA() {
+            dnaAtoms = [];
+            for (let i = 0; i < DNA_ATOMS; i++) {
+                dnaAtoms.push({ energy: 0.3+Math.random()*1.2, freq: 0.2+Math.random()*1.8, phase: Math.random()*Math.PI*2, influence: 0.2+Math.random()*0.8 });
+            }
+            nozzles = [];
+            for (let i = 0; i < NOZZLES_COUNT; i++) {
+                nozzles.push({ group: Math.floor(i/(NOZZLES_COUNT/NOZZLE_GROUPS)), energy: 0.2+Math.random()*0.8, phase: (i/NOZZLES_COUNT)*Math.PI*2, freq: 0.2+Math.random()*1.2 });
+            }
+            mirrorBuffer = new Array(MIRROR_BUFFER_SIZE).fill(0.5);
+            mirrorIndex = 0;
+            dnaVisual.innerHTML = '';
+            for (let i = 0; i < Math.min(64, DNA_ATOMS); i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dna-dot';
+                dot.style.background = `hsl(${i*5},70%,60%)`;
+                dnaVisual.appendChild(dot);
+            }
+        }
+        
+        function mirrorProcess(value, t) {
+            mirrorBuffer[mirrorIndex] = value;
+            mirrorIndex = (mirrorIndex+1) % MIRROR_BUFFER_SIZE;
+            const mirrorIdx = (mirrorIndex + MIRROR_BUFFER_SIZE - 400) % MIRROR_BUFFER_SIZE;
+            mirrorSync = 0.96 * mirrorSync + 0.04 * Math.abs(value - mirrorBuffer[mirrorIdx]);
+            return value * (1 + Math.sin(t*2) * (1-mirrorSync) * 0.25);
+        }
+        
+        function getDynamicDNAEnergy(particleIdx, t, analysis) {
+            const atom = dnaAtoms[particleIdx % DNA_ATOMS];
+            const dnaVal = Math.sin(t * atom.freq + atom.phase) * atom.energy * atom.influence;
+            const videoInfluence = (analysis.brightness * 0.6 + analysis.motion * 1.2) * currentReaction;
+            const videoPulse = Math.sin(t * 3) * videoInfluence * 0.6;
+            const colorEnergy = (analysis.colorR + analysis.colorG + analysis.colorB) / 3;
+            return 0.35 + dnaVal * 0.35 + videoPulse * 0.4 + colorEnergy * 0.2;
+        }
+        
+        function getDynamicNozzleEnergy(group, t, analysis) {
+            let total = 0, count = 0;
+            for (let n of nozzles) {
+                if (n.group === group) {
+                    const osc = Math.sin(t * n.freq + n.phase);
+                    const boost = 1 + analysis.motion * 1.2 * currentReaction;
+                    total += n.energy * (0.6 + 0.4 * osc) * boost;
+                    count++;
+                }
+            }
+            return count > 0 ? Math.min(1.3, total/count) : 0.5;
+        }
+        
+        function detectEdgesFromImageData(imageData, width, height) {
+            const data = imageData.data;
+            const edges = new Set();
+            const gray = new Uint8Array(width*height);
+            for (let i = 0; i < width*height; i++) {
+                gray[i] = (data[i*4] + data[i*4+1] + data[i*4+2]) / 3;
+            }
+            for (let y = 2; y < height-2; y+=2) {
+                for (let x = 2; x < width-2; x+=2) {
+                    let gx=0, gy=0;
+                    for (let ky=-1; ky<=1; ky++) {
+                        for (let kx=-1; kx<=1; kx++) {
+                            const val = gray[(y+ky)*width + (x+kx)];
+                            if (kx !== 0) gx += val * (kx>0 ? 1 : -1);
+                            if (ky !== 0) gy += val * (ky>0 ? 1 : -1);
+                        }
+                    }
+                    if (Math.hypot(gx,gy)/255 > 0.28) edges.add(`${x},${y}`);
+                }
+            }
+            return edges;
+        }
+        
+        function createParticlesFromImageData(imageData, width, height) {
+            const data = imageData.data;
+            const edges = detectEdgesFromImageData(imageData, width, height);
+            const list = [];
+            const step = 3;
+            for (let y = 0; y < height; y += step) {
+                for (let x = 0; x < width; x += step) {
+                    const idx = (y*width + x)*4;
+                    if (idx+2 >= data.length) continue;
+                    const r = data[idx]/255, g = data[idx+1]/255, b = data[idx+2]/255;
+                    if ((r+g+b)/3 > 0.05) {
+                        list.push({
+                            baseX: x, baseY: y, r, g, b,
+                            isEdge: edges.has(`${x},${y}`),
+                            phaseX: Math.random()*Math.PI*2, phaseY: Math.random()*Math.PI*2,
+                            freqX: 0.4+Math.random()*1.4, freqY: 0.4+Math.random()*1.4,
+                            personalAmp: 2+Math.random()*8
+                        });
+                    }
+                }
+            }
+            let cx=0, cy=0;
+            for (let p of list) { cx += p.baseX; cy += p.baseY; }
+            if (list.length) { cx /= list.length; cy /= list.length; }
+            centerX = cx; centerY = cy;
+            let maxX=0, maxY=0;
+            for (let p of list) {
+                maxX = Math.max(maxX, Math.abs(p.baseX-cx));
+                maxY = Math.max(maxY, Math.abs(p.baseY-cy));
+            }
+            baseScale = Math.min(WIDTH/(maxX*2), HEIGHT/(maxY*2)) * 0.85;
+            currentCamera = { x: cx, y: cy, scale: baseScale };
+            cameraTarget = { x: cx, y: cy, scale: baseScale };
+            return list.map(p => {
+                const dx = p.baseX-cx, dy = p.baseY-cy;
+                const dist = Math.hypot(dx, dy);
+                return { ...p, dirX: dx/(dist+0.1), dirY: dy/(dist+0.1), distCenter: dist };
+            });
+        }
+        
+        function renderFrameDynamic(ctx, width, height, frameIndex, camera, particles, analysis) {
+            if (!particles?.length) return;
+            ctx.clearRect(0, 0, width, height);
+            const t = frameIndex / FPS;
+            const globalTime = t * currentSpeed;
+            const videoReaction = analysis.motion * 0.8 + analysis.brightness * 0.4;
+            const globalPulse = 0.5 + Math.sin(globalTime*2.2) * currentPulse * 0.35 * (0.7 + videoReaction*0.6);
+            const objectBreathing = Math.sin(globalTime*1.5) * (currentPulse*0.3) * (1 + analysis.motion*0.8);
+            const scale = camera.scale;
+            const offsetX = width/2 - camera.x*scale;
+            const offsetY = height/2 - camera.y*scale;
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                const dnaEnergy = getDynamicDNAEnergy(i, globalTime, analysis);
+                const nozzleEnergy = getDynamicNozzleEnergy(p.isEdge ? 1 : 0, globalTime, analysis);
+                const moveIntensity = currentMove * (0.5 + dnaEnergy*0.5) * (0.6 + analysis.motion*0.9*currentReaction);
+                const moveScale = p.personalAmp * (0.6 + globalPulse*0.5) * moveIntensity;
+                let ox, oy;
+                if (genMode === 'dna') {
+                    const pulseEffect = (dnaEnergy + nozzleEnergy) * 1.2;
+                    ox = Math.sin(globalTime * p.freqX + p.phaseX + pulseEffect) * moveScale;
+                    oy = Math.cos(globalTime * p.freqY + p.phaseY + pulseEffect) * moveScale;
+                } else if (genMode === 'mirror') {
+                    const mx = mirrorProcess(p.r, globalTime) * (0.7 + analysis.motion*0.6);
+                    ox = Math.sin(globalTime * p.freqX * (1 + mx*0.2) + p.phaseX) * moveScale;
+                    oy = Math.cos(globalTime * p.freqY * (1 + mx*0.2) + p.phaseY) * moveScale;
+                } else {
+                    const mx = mirrorProcess(p.r, globalTime) * (0.7 + analysis.motion*0.6);
+                    const nozzleBoost = nozzleEnergy;
+                    ox = Math.sin(globalTime * p.freqX + p.phaseX + nozzleBoost) * moveScale * (1 + mx*0.12);
+                    oy = Math.cos(globalTime * p.freqY * 0.94 + p.phaseY + nozzleBoost) * moveScale * (1 + mx*0.12);
+                }
+                const breathe = objectBreathing * Math.min(5, p.distCenter*0.03) * (p.isEdge ? 1.2 : 0.8);
+                let sx = (p.baseX + ox + p.dirX * breathe) * scale + offsetX;
+                let sy = (p.baseY + oy + p.dirY * breathe) * scale + offsetY;
+                if (sx < 2 || sx > width-2 || sy < 2 || sy > height-2) continue;
+                const size = (p.isEdge ? 3.2 : 2.0) + globalPulse*0.8 + analysis.brightness*1.2*currentReaction;
+                const brightness = 0.55 + globalPulse*0.45 + (p.isEdge?0.2:0) + analysis.motion*0.4;
+                const vcm = 0.3 + analysis.motion*0.4;
+                const R = Math.min(1, p.r*brightness*(1-vcm) + analysis.colorR*vcm);
+                const G = Math.min(1, p.g*brightness*(1-vcm) + analysis.colorG*vcm);
+                const B = Math.min(1, p.b*brightness*(1-vcm) + analysis.colorB*vcm);
+                ctx.fillStyle = `rgb(${Math.floor(R*255)},${Math.floor(G*255)},${Math.floor(B*255)})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, size, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        
+        function updateCamera(t) {
+            if (cameraMode === 'smart') {
+                cameraTarget = { x: centerX, y: centerY, scale: baseScale * (1 + 0.012*Math.sin(t*1.2)) };
+            } else if (cameraMode === 'sync') {
+                cameraTarget = { x: centerX + Math.sin(t*0.3)*15, y: centerY + Math.cos(t*0.35)*10, scale: baseScale };
+            } else {
+                cameraTarget = { x: centerX, y: centerY, scale: baseScale };
+            }
+            const lerp = 0.12;
+            currentCamera.x += (cameraTarget.x - currentCamera.x) * lerp;
+            currentCamera.y += (cameraTarget.y - currentCamera.y) * lerp;
+            currentCamera.scale += (cameraTarget.scale - currentCamera.scale) * lerp;
+        }
+        
+        function startVideoFrameUpdate() {
+            if (videoAnimationId) cancelAnimationFrame(videoAnimationId);
+            let tempCanvas = null, tempCtx = null;
+            function updateFrame() {
+                if (!sourceVideoElement || currentSourceType !== 'video') return;
+                if (!sourceVideoElement.paused && !sourceVideoElement.ended && sourceVideoElement.readyState >= 2) {
+                    if (!tempCanvas) {
+                        tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = sourceVideoElement.videoWidth;
+                        tempCanvas.height = sourceVideoElement.videoHeight;
+                        tempCtx = tempCanvas.getContext('2d');
+                    }
+                    tempCtx.drawImage(sourceVideoElement, 0, 0);
+                    ctxSource.drawImage(sourceVideoElement, 0, 0, sourceCanvas.width, sourceCanvas.height);
+                    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                    const analysis = analyzeVideoFrame(imageData, tempCanvas.width, tempCanvas.height);
+                    currentParticles = createParticlesFromImageData(imageData, tempCanvas.width, tempCanvas.height);
+                    particleCountSpan.innerText = currentParticles.length;
+                    edgeCountSpan.innerText = currentParticles.filter(p => p.isEdge).length;
+                    const motion = Math.floor(analysis.motion * 100);
+                    motionPercentSpan.innerText = motion;
+                    videoMetricsSpan.innerHTML = `🎬 движение ${motion}% · яркость ${Math.floor(analysis.brightness*100)}% · реакция ${Math.floor(currentReaction*100)}%`;
+                    document.getElementById('sourceInfo').innerHTML = `🎬 Видео · движение ${motion}% · длительность ${Math.floor(sourceVideoElement.duration)} сек`;
+                    window.currentVideoAnalysis = analysis;
+                }
+                videoAnimationId = requestAnimationFrame(updateFrame);
+            }
+            videoAnimationId = requestAnimationFrame(updateFrame);
+        }
+        
+        async function takePhoto() {
+            if (!currentParticles.length) { setStatus('❌ Сначала загрузите фото или видео', true); return; }
+            const canvas = document.createElement('canvas');
+            canvas.width = WIDTH; canvas.height = HEIGHT;
+            const ctx = canvas.getContext('2d');
+            updateCamera(currentFrameIndex/FPS);
+            renderFrameDynamic(ctx, WIDTH, HEIGHT, currentFrameIndex, currentCamera, currentParticles, window.currentVideoAnalysis || videoAnalysis);
+            const link = document.createElement('a');
+            link.download = `rxry_photo_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            setStatus('✅ Фото сохранено в загрузки!', false);
+        }
+        
+        function loadImage(file) {
+            setStatus('📸 Загрузка фото...', false);
+            if (videoAnimationId) cancelAnimationFrame(videoAnimationId);
+            const img = new Image();
+            img.onload = () => {
+                sourceCanvas.width = img.width; sourceCanvas.height = img.height;
+                ctxSource.drawImage(img, 0, 0);
+                initDNA();
+                const tc = document.createElement('canvas');
+                tc.width = img.width; tc.height = img.height;
+                const tctx = tc.getContext('2d');
+                tctx.drawImage(img, 0, 0);
+                const imageData = tctx.getImageData(0, 0, img.width, img.height);
+                currentParticles = createParticlesFromImageData(imageData, img.width, img.height);
+                particleCountSpan.innerText = currentParticles.length;
+                edgeCountSpan.innerText = currentParticles.filter(p => p.isEdge).length;
+                generateBtn.disabled = false;
+                takePhotoBtn.disabled = false;
+                currentSourceType = 'photo';
+                document.getElementById('sourceInfo').innerHTML = `📸 Фото · ${currentParticles.length} частиц`;
+                setStatus(`✅ Готово! ${currentParticles.length} частиц`, false);
+                if (sourceVideoElement) sourceVideoElement?.pause();
+                window.currentVideoAnalysis = videoAnalysis;
+            };
+            img.src = URL.createObjectURL(file);
+        }
+        
+        function loadVideo(file) {
+            setStatus('🎬 Загрузка видео...', false);
+            if (sourceVideoElement && sourceVideoElement.src) URL.revokeObjectURL(sourceVideoElement.src);
+            if (videoAnimationId) cancelAnimationFrame(videoAnimationId);
+            const video = document.createElement('video');
+            video.preload = 'auto';
+            video.muted = true;
+            video.loop = false;
+            video.crossOrigin = 'anonymous';
+            video.playsInline = true;
+            
+            video.onloadedmetadata = () => {
+                sourceCanvas.width = video.videoWidth;
+                sourceCanvas.height = video.videoHeight;
+                video.currentTime = 0;
+                document.getElementById('sourceInfo').innerHTML = `🎬 Видео загружено · ${video.videoWidth}×${video.videoHeight} · длительность ${Math.floor(video.duration)} сек`;
+                setStatus(`🎬 Видео загружено (${Math.floor(video.duration)} сек). Играет полностью!`, false);
+            };
+            
+            video.onseeked = () => {
+                initDNA();
+                const tc = document.createElement('canvas');
+                tc.width = video.videoWidth;
+                tc.height = video.videoHeight;
+                const tctx = tc.getContext('2d');
+                tctx.drawImage(video, 0, 0);
+                const imageData = tctx.getImageData(0, 0, tc.width, tc.height);
+                currentParticles = createParticlesFromImageData(imageData, tc.width, tc.height);
+                particleCountSpan.innerText = currentParticles.length;
+                edgeCountSpan.innerText = currentParticles.filter(p => p.isEdge).length;
+                generateBtn.disabled = false;
+                takePhotoBtn.disabled = false;
+                currentSourceType = 'video';
+                sourceVideoElement = video;
+                video.play().catch(e => console.log('Auto-play:', e));
+                startVideoFrameUpdate();
+                setStatus(`✅ Видео играет! Частицы реагируют на движение. Длительность: ${Math.floor(video.duration)} сек`, false);
+            };
+            
+            video.onerror = () => setStatus('❌ Ошибка видео', true);
+            video.src = URL.createObjectURL(file);
+        }
+        
+        function generateVideo() {
+            setStatus('⚠️ Функция создания видео (5 сек) пока не подключена, но можно сделать снимки', false);
+        }
+        
+        function setStatus(msg, isError) {
+            statusDiv.innerHTML = msg;
+            statusDiv.style.borderLeftColor = isError ? '#ef4444' : '#f97316';
+        }
+        
+        document.querySelectorAll('[data-camera]').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('[data-camera]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                cameraMode = btn.dataset.camera;
+            };
+        });
+        document.querySelectorAll('[data-gen]').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('[data-gen]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                genMode = btn.dataset.gen;
+            };
+        });
+        
+        pulseSlider.oninput = e => currentPulse = parseFloat(e.target.value);
+        speedSlider.oninput = e => currentSpeed = parseFloat(e.target.value);
+        moveSlider.oninput = e => currentMove = parseFloat(e.target.value);
+        reactionSlider.oninput = e => currentReaction = parseFloat(e.target.value);
+        
+        takePhotoBtn.onclick = takePhoto;
+        generateBtn.onclick = generateVideo;
+        photoInput.onchange = e => e.target.files[0] && loadImage(e.target.files[0]);
+        videoInput.onchange = e => e.target.files[0] && loadVideo(e.target.files[0]);
+        
+        function animatePreview() {
+            requestAnimationFrame(animatePreview);
+            if (!currentParticles.length) return;
+            const t = performance.now() / 1000;
+            updateCamera(t);
+            renderFrameDynamic(ctxVideo, WIDTH, HEIGHT, currentFrameIndex, currentCamera, currentParticles, window.currentVideoAnalysis || videoAnalysis);
+            currentFrameIndex = (currentFrameIndex + 1) % (FPS * 10);
+        }
+        
+        initDNA();
+        videoCanvas.width = WIDTH;
+        videoCanvas.height = HEIGHT;
+        sourceCanvas.width = WIDTH;
+        sourceCanvas.height = HEIGHT;
+        requestAnimationFrame(animatePreview);
+        setStatus('⚡ Загрузите ЛЮБОЕ ВИДЕО — будет играть полностью! Частицы реагируют на движение', false);
+    })();
+</script>
+</body>
+</html>
